@@ -36,7 +36,7 @@ export default function PriceChart({ data }: { data: Snapshot[] }) {
             tickFormatter={(value) => `$${value}`}
           />
           <Tooltip
-            formatter={(value: number) => [`$${value.toFixed(2)}`, "Price"]}
+            formatter={(value) => [`$${Number(value).toFixed(2)}`, "Price"]}
             contentStyle={{
               borderRadius: 6,
               fontSize: 12,

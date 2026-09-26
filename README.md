@@ -13,16 +13,18 @@ history, with nothing else in the way.
 
 Type a stock ticker (e.g. `AAPL`) into the search box and the app:
 
-1. Fetches that stock's real current price from a live market data API
-2. Saves the result (ticker, price, date) to a database, so a history builds
-   up over time as you use it
-3. Shows a price-over-time chart and a table of recent lookups for that
-   ticker
+1. Fetches that stock's last ~100 trading days of real prices from a live
+   market data API — so there's a full chart on your very first lookup, not
+   just a single dot
+2. Saves each of those days (ticker, price, date) to a database. Existing
+   days get refreshed with the latest number instead of duplicated
+3. Shows a price-over-time chart of the full stored history and a table of
+   the 10 most recent days for that ticker
 
 It handles the messy real-world cases honestly instead of faking data:
 invalid tickers get a clear "not found" message, a closed market shows the
-last real trading day (labeled with its actual date), repeat lookups on the
-same day reuse the saved price instead of duplicating it, and a failed API
+last real trading day (labeled with its actual date), repeat lookups
+re-fetch from the API but never create duplicate rows, and a failed API
 call says so rather than showing a stale or made-up number.
 
 ## Screenshot
@@ -61,7 +63,7 @@ call says so rather than showing a stale or made-up number.
      unique (ticker, date)
    );
 
-   grant select, insert on public.snapshots to service_role;
+   grant select, insert, update on public.snapshots to service_role;
    ```
 
 3. Create a `.env.local` file in the project root with:

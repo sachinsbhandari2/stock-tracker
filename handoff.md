@@ -1,33 +1,35 @@
 # Handoff: Stock Tracker
 
-Last updated 9/25/2026. Read this first, then v2-plan.md.
+Last updated 9/26/2026. Read this first, then v2-plan.md (kept for history —
+its plan is now built).
 
-## Current state: v1, shipped 9/24/2026
+## Current state: v2, shipped 9/26/2026
 - Live: https://stock-tracker-2.vercel.app/
 - Code: https://github.com/sachinsbhandari2/stock-tracker
-- What it does: type a ticker, the app gets today's price from Alpha Vantage
-  (GLOBAL_QUOTE), saves one row (ticker, price, date) to Supabase, and shows a
-  chart and table of whatever rows exist for that ticker.
+- What it does: type a ticker, the app gets the last ~100 trading days from
+  Alpha Vantage (TIME_SERIES_DAILY, compact) in one call, saves every day to
+  Supabase (existing days get refreshed with the newest price instead of
+  duplicated), and shows a chart of the full stored history plus a table of
+  the 10 most recent days.
 - Built with: Next.js, Supabase (Postgres), Alpha Vantage, Recharts, Vercel,
   directed through Cursor + Claude Code.
+- Required a one-time Supabase permission fix: `service_role` only had
+  `select`/`insert` from v1's setup; v2's "refresh existing days" logic needed
+  `update` granted too (see CLAUDE.md's "Lessons from past sessions").
 
 ## What's broken or rough
-- **Chart is nearly empty for any new ticker.** v1 saves one price per lookup,
-  so history only grows one dot per day. This is the v2 fix.
-- **Every lookup calls Alpha Vantage**, even when the database already has the
-  data. Free key = 25 calls per day, shared by the live site and local testing.
-- **README wording:** says repeat lookups "reuse the saved price." The code
-  actually re-calls the API and just skips saving a duplicate. Fix during v2.
-- **Rate-limit message** is generic ("try again") even though the limit is daily.
+- **Every lookup calls Alpha Vantage**, even when the database already has
+  today's data. Free key = 25 calls per day, shared by the live site and
+  local testing. This is the v3 fix.
+- **Rate-limit message** is generic ("try again") even though the limit is
+  daily. Also v3.
 
-## Next step: v2 (planned for Saturday 9/26)
-Full plan, logic, and the prompt to paste into Claude Code are in v2-plan.md.
-Short version: switch to TIME_SERIES_DAILY (compact) so one lookup saves the
-last ~100 trading days and the chart is useful immediately. Build on a branch
-called v2-history, test on the Vercel preview, then merge.
-
-User feedback comes after v2, not before. The empty chart would dominate any
-feedback on v1.
+## Next step: v3 — stop wasting API calls
+If the database already has the latest trading day for a ticker, serve it
+from the database and skip Alpha Vantage. Plus a clearer "daily limit
+reached, try again tomorrow" message. Not scoped in detail yet — do that at
+the start of the v3 session. This is what makes it safe to share the link
+widely, since right now every visitor's lookup shares the same 25 calls/day.
 
 ## Roadmap after v2 (one feature per version)
 - v3: Stop wasting API calls. If the database already has the latest trading
@@ -57,8 +59,10 @@ feedback on v1.
   layout.
 
 ## Learning goal status
-- SQL: not started. v2 includes the first hand-written queries (see
-  v2-plan.md). Target: first hand-written query by 11/25.
+- SQL: done, 9/26/2026. First hand-written queries in Supabase's SQL editor:
+  a `COUNT` with `WHERE` (rows for one ticker), and a `GROUP BY` with
+  `COUNT`/`MIN`/`MAX` (rows + date range per ticker). Ahead of the 11/25
+  target.
 - Stretch query after v2: for one ticker, find the single biggest day-to-day
   price change in the stored history. Harder (compares each day to the one
   before it), and it's the exact input the v4 explainer needs.

@@ -1,5 +1,20 @@
 # Stock Tracker — Build 1
 
+## Current version
+v2 shipped 9/26/2026. A lookup now backfills the last ~100 trading days
+(Alpha Vantage `TIME_SERIES_DAILY`, `outputsize=compact`) instead of just
+today's price, so the chart is useful on the very first lookup for any
+ticker. See handoff.md for what's next.
+
+## Lessons from past sessions
+- When adding logic that *updates* existing database rows (not just
+  inserts new ones), remember the Supabase `service_role` only has the
+  privileges it was explicitly granted. v1's setup only granted `select`
+  and `insert`; v2 needed to overwrite existing rows with fresher prices,
+  which silently failed until `update` was granted too. Check what
+  privileges a new write pattern needs before assuming the existing grants
+  cover it.
+
 ## Who's building this
 Sachin is a complete beginner. He has never built or shipped software
 before this project. He does not know Git, npm, APIs, databases, or web
@@ -24,7 +39,7 @@ that stock's current price from a real data source, saves a snapshot
 (ticker, price, date) into a database, and shows the user a price-over-time
 chart plus a small table of recent snapshots for that ticker.
 
-This is v1. It does NOT do: price predictions, news, earnings calls,
+As of v2, it still does NOT do: price predictions, news, earnings calls,
 fundamentals, or analyst targets. Those are possible later versions, not now.
 
 ## Stack

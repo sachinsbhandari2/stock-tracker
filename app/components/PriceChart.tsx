@@ -48,7 +48,7 @@ export default function PriceChart({ data }: { data: Snapshot[] }) {
             dataKey="price"
             stroke="#3b82f6"
             strokeWidth={2}
-            dot={{ r: 3, fill: "#3b82f6" }}
+            dot={false}
             activeDot={{ r: 5 }}
           />
         </LineChart>

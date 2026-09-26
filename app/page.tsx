@@ -114,7 +114,10 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {history.map((snapshot) => (
+                {history
+                  .slice(-10)
+                  .reverse()
+                  .map((snapshot) => (
                   <tr
                     key={snapshot.date}
                     className="border-t border-zinc-200 dark:border-zinc-800"

@@ -16,9 +16,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(
+  const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${encodeURIComponent(
     ticker
-  )}&apikey=${apiKey}`;
+  )}&outputsize=compact&apikey=${apiKey}`;
 
   let data: any;
   try {
@@ -38,20 +38,26 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const quote = data["Global Quote"];
-  const price = quote?.["05. price"];
-  const tradingDay = quote?.["07. latest trading day"];
+  const series = data["Time Series (Daily)"];
 
-  if (!price || !tradingDay) {
+  if (data["Error Message"] || !series || Object.keys(series).length === 0) {
     return NextResponse.json({ error: `Ticker "${ticker}" not found.` }, { status: 404 });
   }
 
+  const dates = Object.keys(series).sort();
+  const latestDate = dates[dates.length - 1];
+
+  const rows = dates.map((date) => ({
+    ticker,
+    price: parseFloat(series[date]["4. close"]),
+    date,
+  }));
+
+  const latestPrice = rows[rows.length - 1].price;
+
   const { error: saveError } = await supabase
     .from("snapshots")
-    .upsert(
-      { ticker, price: parseFloat(price), date: tradingDay },
-      { onConflict: "ticker,date", ignoreDuplicates: true }
-    );
+    .upsert(rows, { onConflict: "ticker,date" });
 
   if (saveError) {
     console.error("Failed to save snapshot:", saveError);
@@ -59,7 +65,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     ticker,
-    price: parseFloat(price),
-    date: tradingDay,
+    price: latestPrice,
+    date: latestDate,
   });
 }

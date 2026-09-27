@@ -3,23 +3,44 @@
 Last updated 9/26/2026. Read this first, then v2-plan.md (kept for history —
 its plan is now built).
 
-## Current state: v3, shipped 9/26/2026
-- Live: https://stock-tracker-2.vercel.app/ (v3 changes verified locally;
-  not yet deployed — deploy + live check still pending)
+## Current state: v4, shipped 9/26/2026
 - Code: https://github.com/sachinsbhandari2/stock-tracker
-- What it does: type a ticker, the app first checks a `last_checked` table
-  (new in v3) — if we've already asked Alpha Vantage about this ticker
-  today (Eastern time), it serves the existing snapshot from Supabase
-  instead of calling Alpha Vantage again. Otherwise it gets the last ~100
-  trading days from Alpha Vantage (TIME_SERIES_DAILY, compact) in one call,
-  saves every day to Supabase (existing days get refreshed with the newest
-  price instead of duplicated), stamps `last_checked`, and shows a chart of
-  the full stored history plus a table of the 10 most recent days. If Alpha
-  Vantage's daily limit is hit, shows a clear "Daily lookup limit reached —
-  try again tomorrow" message, falling back to any existing cached data for
-  that ticker instead of a bare error.
+- Live: https://stock-tracker-2.vercel.app/ (deploy + live check pending —
+  see "What's broken or rough")
+- What it does, on top of v3's caching: a full visual redesign (Manrope/
+  IBM Plex Mono fonts, a real user-toggleable dark mode — not just OS
+  preference, no flash of the wrong theme on load — color-coded price
+  moves, card-based layout), a 1W/1M toggle that moves the chart and
+  table together (defaults to 1W), ticker autocomplete (hardcoded
+  AI-stack ticker list + previously-looked-up tickers from `snapshots`,
+  zero extra API calls), and a "Fundamentals" dashboard (PE ratio, PEG,
+  EPS, market cap, 52-week high/low) via Alpha Vantage's `OVERVIEW`
+  endpoint, cached 30 days per ticker. If fundamentals hit the shared
+  rate limit, the dashboard shows an honest message instead of silently
+  disappearing.
+- Design process: rather than describing the redesign in words, a static
+  mockup with dummy data was built and approved *before* any real app
+  code was touched — the approved mockup became the literal spec for the
+  redesign. This caught real feedback early (e.g. the chart/table toggle
+  should default to 1W, not 1M) that would have been much more annoying
+  to fix after the fact.
+- Required a one-time Supabase setup: a new `company_overview` table
+  (one row per ticker, `checked_on` date column — deliberately not named
+  `last_checked`, since that's already a different table's name) with
+  `select`/`insert`/`update` granted to `service_role`.
 - Built with: Next.js, Supabase (Postgres), Alpha Vantage, Recharts, Vercel,
   directed through Cursor + Claude Code.
+
+## v3, shipped 9/26/2026 (still in place)
+- What it does: type a ticker, the app first checks a `last_checked` table
+  — if we've already asked Alpha Vantage about this ticker today (Eastern
+  time), it serves the existing snapshot from Supabase instead of calling
+  Alpha Vantage again. Otherwise it gets the last ~100 trading days from
+  Alpha Vantage (TIME_SERIES_DAILY, compact) in one call, saves every day
+  to Supabase, stamps `last_checked`, and shows a chart plus table. If
+  Alpha Vantage's daily limit is hit, shows a clear "Daily lookup limit
+  reached — try again tomorrow" message, falling back to any existing
+  cached data for that ticker instead of a bare error.
 - Required a one-time Supabase setup: a new `last_checked` table (ticker,
   checked_on) with `select`/`insert`/`update` granted to `service_role` —
   same kind of one-time grant step as v2's fix, new table needs its own
@@ -33,35 +54,14 @@ its plan is now built).
   which also removed the need for any weekend/holiday calendar logic.
 
 ## What's broken or rough
-- v3 verified working locally only — still needs to be deployed to Vercel
-  and checked live, same as v2's rollout process.
+- v4 verified working locally only — still needs to be deployed to Vercel
+  and checked live, same as v2/v3's rollout process.
 
-## Next step: v4 — UI polish + stats + single-stock dashboard + autocomplete
-  + chart week/month toggle
-Bundled together because they're all frontend/presentation-layer work (see
-roadmap below for the breakdown of each piece). Not scoped in detail yet —
-do that at the start of the v4 session.
+## Next step: v4.1 — year toggle for the chart
+Not scoped in detail yet — do that at the start of the next session.
 
-## Roadmap after v3 (one version can bundle several features when they're
+## Roadmap after v4 (one version can bundle several features when they're
 the same area of the codebase — kept as separate work when they're not)
-- v4 — UI polish + stats + single-stock dashboard + ticker autocomplete +
-  chart week/month toggle. All frontend/presentation-layer work:
-  - Visual redesign: color-coded price moves (green/red), better layout,
-    spacing, visual hierarchy — make it read as a real stock app instead
-    of a bare form.
-  - More stats: PE ratio, PEG ratio, EPS, market cap, 52-week high/low,
-    % change — laid out as a proper single-stock dashboard rather than
-    bolted onto the current card/table. PE/PEG/EPS/market cap need Alpha
-    Vantage's `OVERVIEW` endpoint (a second, separate API call per ticker
-    from the price history call), and change slowly — cache much longer
-    than daily prices, not on every lookup.
-  - Ticker autocomplete: type a couple letters, see suggestions. Source: a
-    small hardcoded list of common tickers (zero API cost) plus "recently
-    looked-up" tickers already in the `snapshots` table (also zero extra
-    cost) — not Alpha Vantage's `SYMBOL_SEARCH`, which would burn quota on
-    every keystroke.
-  - Chart week/month toggle: pure frontend filtering of data already
-    fetched (~100 days currently stored covers both), no backend change.
 - v4.1 — year toggle for the chart, as its own quick follow-up right after
   v4, since it's the one piece touching data-fetching logic instead of
   pure display: switch the Alpha Vantage call from `outputsize=compact` to
@@ -109,9 +109,12 @@ the same area of the codebase — kept as separate work when they're not)
   price change in the stored history. Harder (compares each day to the one
   before it), and it's the exact input the v5 "why did it move" explainer
   needs.
-- JOIN practice: now possible — v3 added a second table (`last_checked`).
-  A simple first JOIN: list every ticker with its latest snapshot price
-  alongside its `last_checked` date, to see both tables' info in one query.
+- JOIN practice: now possible — v3 added a second table (`last_checked`),
+  and v4 added a third (`company_overview`). A simple first JOIN: list
+  every ticker with its latest snapshot price alongside its `last_checked`
+  date, to see both tables' info in one query. A follow-up: join all
+  three tables to see a ticker's latest price, price-check date, and
+  fundamentals-check date side by side.
 
 ## Every push
 - Confirm no .env file or API key is being committed (.gitignore covers

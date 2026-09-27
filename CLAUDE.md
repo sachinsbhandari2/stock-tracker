@@ -1,8 +1,23 @@
 # Stock Tracker — Build 1
 
 ## Current version
-v3 shipped 9/26/2026. A lookup now checks a `last_checked` table first —
-if we've already asked Alpha Vantage about a ticker today (Eastern time),
+v4 shipped 9/26/2026. A full visual redesign (approved via a mockup
+before any code was touched — see "Lessons" below): Manrope/IBM Plex
+Mono fonts, a real user-toggleable dark mode (not just OS preference),
+color-coded price moves, and a card-based layout throughout. The chart
+now has a 1W/1M toggle that moves the chart and table together
+(defaults to 1W). The ticker input has autocomplete (a hardcoded
+AI-stack ticker list plus previously-looked-up tickers, zero extra API
+calls). A new "Fundamentals" dashboard shows PE ratio, PEG, EPS, market
+cap, and 52-week high/low via Alpha Vantage's `OVERVIEW` endpoint,
+cached 30 days per ticker in a new `company_overview` table (its own
+`checked_on` column — deliberately not named `last_checked`, since
+that's already the name of a different table). If fundamentals hit the
+shared rate limit, the dashboard shows an honest message instead of
+silently disappearing.
+
+v3 (still in place): a lookup checks a `last_checked` table first — if
+we've already asked Alpha Vantage about a ticker today (Eastern time),
 the app serves the existing snapshot from Supabase instead of calling
 Alpha Vantage again, protecting the shared 25-calls/day free-tier limit.
 If the daily limit is actually hit, the app shows a clear "Daily lookup
@@ -27,6 +42,28 @@ See handoff.md for what's next.
   the point. The simpler and fully correct check for a data source that
   only updates once a day is "did we already ask about this today at
   all," not "do we have the final answer yet."
+- For UI/visual redesigns on this project (a portfolio piece — see
+  below), build a throwaway static mockup with dummy data first and get
+  it approved before writing any real app code. v4's first attempt at
+  scoping a redesign tried to describe the look in a paragraph of
+  adjectives ("clean," "modern," "professional"); that's not something
+  a beginner can meaningfully approve or reject sight-unseen. A quick
+  visual mockup made the actual decision fast and concrete, and caught
+  real feedback (e.g. "the 1M default view is wrong, should default to
+  1W") before it was baked into real code.
+- A feature that depends on an external API can fail in ways that look
+  like a bug in a specific case but are actually the shared rate limit
+  (see "Ground rules" — never invent data if it's missing) resurfacing
+  in a new part of the app. v4's fundamentals dashboard originally
+  disappeared entirely for some tickers instead of showing why; the fix
+  was to always show an explicit message on failure for that section,
+  never let a sub-feature fail silently just because the top-level
+  price lookup still succeeded.
+- When adding a *second* table that also tracks "when did we last check
+  this," don't name its column the same as an existing *table*'s name
+  (v4 almost named a column in `company_overview` `last_checked`, which
+  already exists as the name of a different table — confusing to read
+  later). Give it its own distinct name (`checked_on`).
 
 ## Who's building this
 Sachin is a complete beginner. He has never built or shipped software

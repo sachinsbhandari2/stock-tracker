@@ -1,10 +1,14 @@
 # Stock Tracker — Build 1
 
 ## Current version
-v2 shipped 9/26/2026. A lookup now backfills the last ~100 trading days
-(Alpha Vantage `TIME_SERIES_DAILY`, `outputsize=compact`) instead of just
-today's price, so the chart is useful on the very first lookup for any
-ticker. See handoff.md for what's next.
+v3 shipped 9/26/2026. A lookup now checks a `last_checked` table first —
+if we've already asked Alpha Vantage about a ticker today (Eastern time),
+the app serves the existing snapshot from Supabase instead of calling
+Alpha Vantage again, protecting the shared 25-calls/day free-tier limit.
+If the daily limit is actually hit, the app shows a clear "Daily lookup
+limit reached — try again tomorrow" message, and falls back to whatever
+snapshot data already exists for that ticker instead of a bare error.
+See handoff.md for what's next.
 
 ## Lessons from past sessions
 - When adding logic that *updates* existing database rows (not just
@@ -14,6 +18,15 @@ ticker. See handoff.md for what's next.
   which silently failed until `update` was granted too. Check what
   privileges a new write pattern needs before assuming the existing grants
   cover it.
+- When deciding whether cached data is "fresh enough" to skip an external
+  API call, don't compare against a calculated ideal (like "today's
+  expected trading day," accounting for weekends). v3's first draft did
+  this and had a real gap: a trading day's official data doesn't exist
+  anywhere — not even from the API itself — until the market closes, so
+  the check kept calling the API all day during market hours, defeating
+  the point. The simpler and fully correct check for a data source that
+  only updates once a day is "did we already ask about this today at
+  all," not "do we have the final answer yet."
 
 ## Who's building this
 Sachin is a complete beginner. He has never built or shipped software

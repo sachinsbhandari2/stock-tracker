@@ -121,5 +121,7 @@ the same area of the codebase — kept as separate work when they're not)
   .env*, but check anyway). Keys stay in environment variables.
 
 ## Still owed
-- Story step: short case study. Write it after v2 ("v1 had an empty chart,
-  here's how I found it and fixed it").
+- (done, 9/26/2026) Story step: short case study — see `case-study.md`,
+  now a living document. Update it via the `/career-handoff` skill
+  (`~/.claude/skills/career-handoff`) at the end of any session with real
+  shipped work, so it stays current for resume/LinkedIn/interview use.

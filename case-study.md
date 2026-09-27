@@ -67,81 +67,119 @@ instead of in parallel, and a silent-failure bug where the fundamentals
 section would vanish entirely (instead of showing an honest message) if
 that second API call hit the shared rate limit.
 
-## Skills demonstrated (mapped to where they show up)
+## A note on authorship, read this before using anything below
 
-**Frontend / product engineering**
-- React + Next.js (App Router), TypeScript, component decomposition
-- Tailwind CSS, including building a custom design-token system
-  (light/dark theming driven by CSS custom properties, not duplicated
-  utility classes) rather than relying on defaults
-- Recharts (data visualization): custom gradient fills, synchronized
-  interactive controls driving both a chart and a table from one state
-- Debugging real runtime issues via browser dev tools output (a React
-  hydration mismatch, a Next.js font-loading bug) rather than guessing
+This project was built by directing Claude Code (an AI coding agent) as
+a collaborator, not by hand-writing the application code personally.
+That distinction matters for how the "skills" below get worded — the
+line is: **if Sachin didn't personally write or can't independently
+explain a piece of code without help, it's not his hands-on coding
+skill, even though the work and the decisions around it are entirely
+real.** This section is split accordingly. (This got mis-stated once
+already — an earlier draft of this file attributed Tailwind/Recharts/
+debugging work to Sachin directly; corrected here.)
 
-**Backend / data engineering**
-- Designing and consuming REST API integrations against a third-party
-  data provider (Alpha Vantage), across two distinct endpoints with
-  different data shapes and staleness characteristics
-- Postgres schema design (Supabase): multiple related tables, unique
-  constraints to prevent duplicate data, upsert patterns
-  (insert-or-update) instead of naive inserts
-- Hand-writing SQL: `COUNT`/`WHERE`, `GROUP BY` aggregates, and
-  cross-table `JOIN`s
-- Designing and implementing a two-tier caching strategy against a hard
-  external rate limit (a same-day cache for fast-changing data, a 30-day
-  cache for slow-changing data), including graceful, honest degradation
-  when the limit is actually hit (never a silent failure or fabricated
-  data)
-- Understanding and configuring database-level permissions (Postgres
-  grants) as a distinct concern from application code
+## Things Sachin personally did (his actual hands-on skills)
 
-**Process / product judgment**
+- **Directing an AI coding agent through a real product build**: scoping
+  each version, reviewing plans before code was written, and correcting
+  the agent's approach when it made a wrong assumption (e.g. flagging
+  that a v3 caching design had a real gap, prompting a redesign before
+  any code was committed).
+- **Hands-on QA against a running app**: testing the live site himself
+  across many tickers and catching real bugs from actual observed
+  behavior (a layout that visibly jumped, a section that silently
+  disappeared instead of showing an error) — the kind of precise bug
+  report ("it flows to fundamentals, then jumps back, then pops in")
+  that's a real skill distinct from writing the fix.
+- **Hand-writing SQL** in Supabase's SQL editor as a deliberate learning
+  goal: `COUNT`/`WHERE` and `GROUP BY` aggregate queries, with cross-table
+  `JOIN`s as a documented next step (see `handoff.md`'s "Learning goal
+  status").
+- **Running database administration tasks directly**: creating tables
+  and setting Postgres grants/Row Level Security in the Supabase
+  console himself, and making the actual security decision (enabling
+  RLS) when presented with the tradeoff.
+- **Making the explicit product/design calls** when presented with
+  options: cache durations, which tickers to hardcode, chart/table
+  toggle defaults, visual design direction from a mockup, database
+  security settings.
+- **Verifying facts before trusting them**: pushing back on and
+  independently confirming a ticker symbol claim rather than taking it
+  on faith.
+
+## What Claude Code implemented under that direction
+
+Real, shipped work — just not Sachin's own hands-on coding skill:
+React + Next.js (TypeScript) component structure, Tailwind CSS styling
+and a custom light/dark design-token system, Recharts chart
+customization, the two-tier API caching logic, and fixing runtime bugs
+(a React hydration mismatch, a data-fetching race condition, a silent
+failure path) that surfaced during testing.
+
+## Process skills (legitimately his, regardless of who typed the code)
+
 - Iterative, version-by-version delivery: each version scoped, planned,
-  built in small verified steps, and shipped before starting the next
-- Validating a UI redesign with a cheap, disposable mockup before writing
-  production code, to avoid rebuilding a wrong assumption twice
-- Root-causing bugs from real observed behavior (a live screenshot, a
-  console error) rather than guessing from theory
-- Working with an AI pair-programming workflow (Claude Code / Cursor) as
-  a directed collaborator — reviewing its output, catching incorrect
-  assumptions it made, and correcting its plan before code was written
+  and verified before the next began — not built all at once.
+- Validating a UI redesign with a cheap, disposable mockup before any
+  production code was touched, specifically to avoid rebuilding a wrong
+  assumption twice.
+- Treating "it works" and "it's good" as separate bars, and pushing back
+  when something technically functioned but didn't meet the actual goal
+  (e.g. requesting the chart/table toggle default be reconsidered after
+  seeing it live).
 
 ## Draft resume bullets
 
-Pick 2–3 depending on the role; don't use all of them at once.
+Pick 2–3 depending on the role; don't use all of them at once. These are
+worded to hold up honestly under a follow-up question about who wrote
+what — see "A note on authorship" above.
 
-- Designed and shipped a full-stack stock-tracking web app (Next.js,
-  TypeScript, Supabase/Postgres) across four iterative releases, each
-  independently planned, built, and verified before the next began.
-- Built a two-tier API caching strategy to keep a data-heavy dashboard
-  feature within a hard third-party rate limit, including graceful
-  fallback behavior instead of silent failures when the limit is hit.
-- Diagnosed and fixed a data-freshness bug where a calendar-based caching
-  rule broke during market hours, replacing it with a simpler, fully
-  correct check — reducing unnecessary logic while fixing the bug.
-- Led a UI/UX redesign from mockup to production: validated a new visual
-  design with a disposable prototype before writing any application
-  code, then implemented a token-based light/dark theming system in
-  Tailwind CSS.
-- Wrote and executed hand-crafted SQL (aggregate queries, multi-table
-  joins) against a Postgres database to support caching and reporting
-  features.
+- Directed the end-to-end build of a full-stack stock-tracking web app
+  (Next.js, TypeScript, Supabase/Postgres) across four iterative
+  releases using an AI coding agent (Claude Code), scoping and verifying
+  each version before the next began.
+- Specified and validated a two-tier API caching strategy to keep a
+  data-heavy dashboard feature within a hard third-party rate limit,
+  including catching a real design gap in an early draft (a
+  calendar-based freshness check that broke during market hours) before
+  it shipped.
+- Led a UI/UX redesign from mockup to production: reviewed and approved
+  a disposable prototype before any application code was written, then
+  caught and requested fixes for real usability issues (a confusing
+  default view, a jarring layout shift) found through hands-on testing
+  of the live app.
+- Hand-wrote SQL (aggregate queries with `GROUP BY`, cross-table joins)
+  against a Postgres database and independently managed database
+  security configuration (Row Level Security, role grants).
+- Practiced rigorous AI-assisted development: caught and corrected an
+  AI agent's incorrect factual claim (a stock ticker) before it reached
+  production, and drove multiple rounds of live-testing-based bug fixes
+  rather than accepting "looks done" at face value.
 
 ## Draft LinkedIn project description
 
 > **Stock Tracker** — A stock lookup dashboard (Next.js, TypeScript,
-> Supabase/Postgres, Tailwind) built and shipped in four iterative
-> versions. Fetches real price history and company fundamentals from a
-> live market data API, with a two-tier caching layer that keeps the app
-> within a shared, hard rate limit — a design caught and corrected
-> mid-build after finding a real gap in the first draft's logic.
-> Redesigned end-to-end with a mockup-first process, a real
-> light/dark theming system, and an interactive, portfolio-quality
-> dashboard UI. [live demo] · [code]
+> Supabase/Postgres, Tailwind), built by directing an AI coding agent
+> (Claude Code) through four iterative, independently-verified releases.
+> Fetches real price history and company fundamentals from a live market
+> data API, protected by a two-tier caching strategy against a shared,
+> hard rate limit — a design gap in the first draft was caught and fixed
+> before it shipped. Led an end-to-end UI redesign validated with a
+> disposable mockup before any code was written, and drove multiple
+> rounds of bug fixes from hands-on testing of the live app. [live demo]
+> · [code]
 
 ## Skills to add to a LinkedIn profile
 
-Next.js · React · TypeScript · Tailwind CSS · Supabase · PostgreSQL ·
-SQL · REST API Integration · Data Visualization (Recharts) · Caching
-Strategies · Git/GitHub · Vercel · AI-Assisted Development
+Split so it's honest at a glance — pick from both lists as appropriate,
+but don't blur them into one undifferentiated list:
+
+**Directed / hands-on:** AI-Assisted Development · Product Management ·
+SQL · PostgreSQL · Database Administration · QA / Testing · UI/UX Design
+Review · Git/GitHub
+
+**Delivered via AI-directed implementation (real, but not personal
+coding proficiency unless independently verified later):** Next.js ·
+React · TypeScript · Tailwind CSS · Supabase · REST API Integration ·
+Data Visualization (Recharts) · Vercel
